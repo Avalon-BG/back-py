@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from avalon.mp3 import create_mp3
+from avalonBG.mp3 import create_mp3
 
 
 def test_create_mp3(tmpdir):

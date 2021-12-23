@@ -13,8 +13,6 @@ def new_vote(game_id, url, result=None):
         json=[dictio["id"] for dictio in list_players_quest]
     )
 
-    print("\n\n")
-
     nb_votes = 0
     if result is not None:
         nb_votes = game["quests"][game["current_quest"]]["nb_votes_to_fail"]
@@ -22,18 +20,18 @@ def new_vote(game_id, url, result=None):
             nb_votes = len(list_players_quest) - (game["quests"][game["current_quest"]]["nb_votes_to_fail"] - 1)
 
     for ind, player in enumerate(list_players_quest):
-        print("\n", req.get("{}games/{}".format(url, game_id)).json()["quests"][game["current_quest"]])
+
         if ind < nb_votes:
             req.post(
                 "{}games/{}/quests/{}".format(url, game_id, game["current_quest"]),
                 json={player["id"]: result}
             )
+
         else:
             req.post(
                 "{}games/{}/quests/{}".format(url, game_id, game["current_quest"]),
                 json={player["id"]: choice([True, True, False])}
             )
-    print("\n", req.get("{}games/{}".format(url, game_id)).json()["quests"][game["current_quest"]])
 
     req.get("{}games/{}".format(url, game_id))
 

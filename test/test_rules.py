@@ -1,4 +1,4 @@
-from avalon.rules import get_rules
+from avalonBG.rules import get_rules
 
 
 def test_get_rules():

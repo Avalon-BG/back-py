@@ -1,12 +1,12 @@
 import rethinkdb as r
 
-from avalon.db_utils import db_get_value, db_update_value, db_get_game
-from avalon.exception import AvalonError
+from avalonBG.db_utils import db_get_value, db_update_value, db_get_game
+from avalonBG.exception import AvalonBGError
 
 
 def check_quest_number(quest_number):
     if not 0 <= quest_number <= 4:
-        raise AvalonError("Quest's number should be between 0 and 4!")
+        raise AvalonBGError("Quest's number should be between 0 and 4!")
 
 
 def update_current_id_player(game_id):
@@ -44,7 +44,7 @@ def quest_unsend(game_id):
     )
 
     if nb_quest_unsend == 5:
-        raise AvalonError("Game is over because 5 consecutive laps have been passed: Red team won!")
+        raise AvalonBGError("Game is over because 5 consecutive laps have been passed: Red team won!")
 
     if nb_quest_unsend < 4:
         update_current_id_player(game_id=game_id)
@@ -110,15 +110,15 @@ def quest_get(game_id, quest_number):
 
     game = r.RethinkDB().table("games").get(game_id).run()
     if not game:
-        raise AvalonError("Game's id '{}' does not exist!".format(game_id))
+        raise AvalonBGError("Game's id '{}' does not exist!".format(game_id))
 
     game_updated = r.RethinkDB().table("quests").get(game["quests"][quest_number]).run()
 
     if "status" not in game_updated:
-        raise AvalonError("The vote number '{}' has not started!".format(quest_number))
+        raise AvalonBGError("The vote number '{}' has not started!".format(quest_number))
 
     if game_updated["status"] is None:
-        raise AvalonError("The vote number '{}' is not finished!".format(quest_number))
+        raise AvalonBGError("The vote number '{}' is not finished!".format(quest_number))
 
     return game_updated
 
@@ -129,36 +129,36 @@ def quest_post(payload, game_id, quest_number):
 
     game = r.RethinkDB().table("games").get(game_id).run()
     if not game:
-        raise AvalonError("Game's id '{}' does not exist!".format(game_id))
+        raise AvalonBGError("Game's id '{}' does not exist!".format(game_id))
 
     if game["nb_quest_unsend"] == 5:
-        raise AvalonError("Game is over because 5 consecutive laps have been passed: Red team won!")
+        raise AvalonBGError("Game is over because 5 consecutive laps have been passed: Red team won!")
 
     if "result" in game:
-        raise AvalonError("Game is over!")
+        raise AvalonBGError("Game is over!")
 
     if game["current_quest"] != quest_number:
-        raise AvalonError("Only vote number {} is allowed!".format(game["current_quest"]))
+        raise AvalonBGError("Only vote number {} is allowed!".format(game["current_quest"]))
 
     quest = r.RethinkDB().table("quests").get(game["quests"][quest_number]).run()
 
     if "status" not in quest:
-        raise AvalonError("Vote number '{}' is not established!".format(quest_number))
+        raise AvalonBGError("Vote number '{}' is not established!".format(quest_number))
 
     if quest["status"] is not None:
-        raise AvalonError("Vote number '{}' is finished!".format(quest_number))
+        raise AvalonBGError("Vote number '{}' is finished!".format(quest_number))
 
     if len(payload) != 1:
-        raise AvalonError("Only one vote allowed!")
+        raise AvalonBGError("Only one vote allowed!")
 
     if list(payload)[0] not in list(quest["votes"]):
-        raise AvalonError("Player '{}' is not allowed to vote!".format(list(payload)[0]))
+        raise AvalonBGError("Player '{}' is not allowed to vote!".format(list(payload)[0]))
 
     if quest["votes"][list(payload)[0]] is not None:
-        raise AvalonError("Player '{}' has already voted!".format(list(payload)[0]))
+        raise AvalonBGError("Player '{}' has already voted!".format(list(payload)[0]))
 
     if not isinstance(list(payload.values())[0], bool):
-        raise AvalonError("Vote should be a boolean!")
+        raise AvalonBGError("Vote should be a boolean!")
 
     quest["votes"].update(payload)
 
@@ -201,25 +201,25 @@ def quest_put(payload, game_id, quest_number):
 
     game = r.RethinkDB().table("games").get(game_id).run()
     if not game:
-        raise AvalonError("Game's id '{}'' does not exist!".format(game_id))
+        raise AvalonBGError("Game's id '{}'' does not exist!".format(game_id))
 
     if game["nb_quest_unsend"] == 5:
-        raise AvalonError("Game is over because 5 consecutive laps have been passed : Red team won!")
+        raise AvalonBGError("Game is over because 5 consecutive laps have been passed : Red team won!")
 
     if "result" in game:
-        raise AvalonError("Game is over!")
+        raise AvalonBGError("Game is over!")
 
     if game["current_quest"] != quest_number:
-        raise AvalonError("Vote number {} is already established!".format(quest_number))
+        raise AvalonBGError("Vote number {} is already established!".format(quest_number))
 
     quest = r.RethinkDB().table("quests").get(game["quests"][quest_number]).run()
 
     if ("status" in quest or "votes" in quest) and quest["status"] is not None:
-        raise AvalonError("Only vote number '{}'' is allowed!".format(game["current_quest"]))
+        raise AvalonBGError("Only vote number '{}'' is allowed!".format(game["current_quest"]))
 
     for player_id in payload:
         if player_id not in game["players"]:
-            raise AvalonError("Player '{}' is not in this game!".format(player_id))
+            raise AvalonBGError("Player '{}' is not in this game!".format(player_id))
 
     id_quest_number = game["quests"][quest_number]
     nb_players_to_send = db_get_value(
@@ -229,7 +229,7 @@ def quest_put(payload, game_id, quest_number):
     )
 
     if len(payload) != nb_players_to_send:
-        raise AvalonError("Quest number '{}' needs '{}' votes!".format(quest_number, nb_players_to_send))
+        raise AvalonBGError("Quest number '{}' needs '{}' votes!".format(quest_number, nb_players_to_send))
 
     if "status" in quest:
         r.RethinkDB().table("quests").get(id_quest_number).update({"votes": None}).run()

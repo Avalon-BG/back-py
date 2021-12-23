@@ -2,9 +2,9 @@ from random import shuffle, choice
 
 import rethinkdb as r
 
-from avalon.db_utils import db_get_value, resolve_key_id
-from avalon.exception import AvalonError
-from avalon.rules import get_rules
+from avalonBG.db_utils import db_get_value, resolve_key_id
+from avalonBG.exception import AvalonBGError
+from avalonBG.rules import get_rules
 
 
 def game_put(payload):
@@ -65,64 +65,64 @@ def game_put(payload):
                             }
     """
     if not payload or set(payload) != {"players", "roles"}:
-        raise AvalonError("Only 'players' and 'roles' are required!")
+        raise AvalonBGError("Only 'players' and 'roles' are required!")
 
     for key, val in payload.items():
         if not isinstance(val, list):
-            raise AvalonError("Both 'players' and 'roles' must be a list!")
+            raise AvalonBGError("Both 'players' and 'roles' must be a list!")
 
         if key == "players":
             for player in val:
                 if not isinstance(player, dict):
-                    raise AvalonError("'player' must be an object!")
+                    raise AvalonBGError("'player' must be an object!")
 
                 if set(player) != {"name", "avatar_index"}:
-                    raise AvalonError("'Only 'name' and 'avatar_index' are required for a player!")
+                    raise AvalonBGError("'Only 'name' and 'avatar_index' are required for a player!")
 
                 if not isinstance(player["name"], str):
-                    raise AvalonError("'name' of a player must be a string!")
+                    raise AvalonBGError("'name' of a player must be a string!")
 
                 if not isinstance(player["avatar_index"], int):
-                    raise AvalonError("'avatar_index' of a player must be an int!")
+                    raise AvalonBGError("'avatar_index' of a player must be an int!")
 
         elif key == "roles":
             for elem in val:
                 if not isinstance(elem, str):
-                    raise AvalonError("Elements in 'roles' must be a string!")
+                    raise AvalonBGError("Elements in 'roles' must be a string!")
 
     rules = get_rules()
     min_nb_player = int(min(rules, key=int))
     max_nb_player = int(max(rules, key=int))
 
     if not min_nb_player <= len(payload["players"]) <= max_nb_player:
-        raise AvalonError("Player number should be between {} and {}!".format(min_nb_player, max_nb_player))
+        raise AvalonBGError("Player number should be between {} and {}!".format(min_nb_player, max_nb_player))
 
     if len(payload["players"]) != len(set([player["name"] for player in payload["players"]])):
-        raise AvalonError("Players name should be unique!")
+        raise AvalonBGError("Players name should be unique!")
 
     for player in payload["players"]:
         if player["name"].isspace() or player["name"] == "":
-            raise AvalonError("Players' name cannot be empty!")
+            raise AvalonBGError("Players' name cannot be empty!")
 
     if len(payload["roles"]) != len(set(payload["roles"])):
-        raise AvalonError("Players role should be unique!")
+        raise AvalonBGError("Players role should be unique!")
 
     available_roles = ("oberon", "morgan", "mordred", "perceval")  #TODO: should be a variable
     for role in payload["roles"]:
         if role not in available_roles:
-            raise AvalonError("Players role should be {}, {}, {} or {}!".format(*available_roles))
+            raise AvalonBGError("Players role should be {}, {}, {} or {}!".format(*available_roles))
 
     if "morgan" in payload["roles"] and "perceval" not in payload["roles"]:
-        raise AvalonError("'morgan' is selected but 'perceval' is not!")
+        raise AvalonBGError("'morgan' is selected but 'perceval' is not!")
 
     if "perceval" in payload["roles"] and "morgan" not in payload["roles"]:
-        raise AvalonError("'perceval' is selected but 'morgan' is not!")
+        raise AvalonBGError("'perceval' is selected but 'morgan' is not!")
 
     # find rules
     game_rules = rules[str(len(payload["players"]))]
 
     if len([role for role in payload["roles"] if role != "perceval"]) > game_rules["red"]:
-        raise AvalonError("Too many red roles chosen!")
+        raise AvalonBGError("Too many red roles chosen!")
 
     # add roles to players
     players = roles_and_players(
@@ -204,40 +204,40 @@ def roles_and_players(dict_names_roles, max_red, max_blue):
 def game_guess_merlin(game_id, payload):
 
     if len(payload) != 1:
-        raise AvalonError("Only 1 vote required ('assassin')!")
+        raise AvalonBGError("Only 1 vote required ('assassin')!")
 
     game = r.RethinkDB().table("games").get(game_id).run()
     if not game:
-        raise AvalonError("Game's id {} does not exist!".format(game_id))
+        raise AvalonBGError("Game's id {} does not exist!".format(game_id))
 
     if game["nb_quest_unsend"] == 5:
-        raise AvalonError("Game is over because 5 consecutive laps have been passed : Red team won!")
+        raise AvalonBGError("Game is over because 5 consecutive laps have been passed : Red team won!")
 
     assassin_id = list(payload)[0]
     vote_assassin = payload[assassin_id]
 
     if assassin_id not in game["players"]:
-        raise AvalonError("Player {} is not in this game!".format(assassin_id))
+        raise AvalonBGError("Player {} is not in this game!".format(assassin_id))
 
     if "assassin" not in r.RethinkDB().table("players").get(assassin_id).run():
-        raise AvalonError("Player {} is not 'assassin'!".format(assassin_id))
+        raise AvalonBGError("Player {} is not 'assassin'!".format(assassin_id))
 
     if vote_assassin not in game["players"]:
-        raise AvalonError("Player {} is not in this game!".format(vote_assassin))
+        raise AvalonBGError("Player {} is not in this game!".format(vote_assassin))
 
     game = r.RethinkDB().table("games").get(game_id).run()
     if not game:
-        raise AvalonError("Game's id {} does not exist!".format(game_id))
+        raise AvalonBGError("Game's id {} does not exist!".format(game_id))
 
     result = game.get("result")
     if not result:
-        raise AvalonError("Game's status is not established!")
+        raise AvalonBGError("Game's status is not established!")
 
     if not result["status"]:
-        raise AvalonError("Games's status should be 'true' (ie blue team won)!")
+        raise AvalonBGError("Games's status should be 'true' (ie blue team won)!")
 
     if "guess_merlin_id" in result:
-        raise AvalonError("Merlin already chosen!")
+        raise AvalonBGError("Merlin already chosen!")
 
     result["guess_merlin_id"] = vote_assassin
     if db_get_value("players", vote_assassin, "role") == "merlin":

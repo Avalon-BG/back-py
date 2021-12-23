@@ -1,6 +1,6 @@
 import rethinkdb as r
 
-from avalon.exception import AvalonError
+from avalonBG.exception import AvalonBGError
 
 
 def db_connect():
@@ -26,7 +26,7 @@ def db_get_game(game_id=None):
 
     game = r.RethinkDB().table("games").get(game_id).run()
     if not game:
-        raise AvalonError("Game's id {} does not exist !".format(game_id))
+        raise AvalonBGError("Game's id {} does not exist !".format(game_id))
 
     game.update(
         {
@@ -48,7 +48,7 @@ def db_get_value(table, ident, key):
     try:
         requested_value = r.RethinkDB().table(table).get(ident)[key].run()
     except r.errors.ReqlNonExistenceError:
-        raise AvalonError("Requested value is not available!")
+        raise AvalonBGError("Requested value is not available!")
 
     return requested_value
 
@@ -62,12 +62,12 @@ def db_update_value(table, ident, key, value):
 def restart_db(payload_tables):
 
     if not isinstance(payload_tables, list):
-        raise AvalonError("Payload should be a list!")
+        raise AvalonBGError("Payload should be a list!")
 
     list_tables = ("games", "players", "quests", "users")
     for table in payload_tables:
         if table not in list_tables:
-            raise AvalonError("Table {} should be in {}!".format(table, list_tables))
+            raise AvalonBGError("Table {} should be in {}!".format(table, list_tables))
 
         if table in r.RethinkDB().db("test").table_list().run():
             r.RethinkDB().table_drop(table).run()

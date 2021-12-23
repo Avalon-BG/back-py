@@ -2,7 +2,7 @@ import json
 
 import importlib.resources as pkg_resources
 
-from avalon.exception import AvalonError
+from avalonBG.exception import AvalonBGError
 
 from . import resources
 
@@ -16,8 +16,8 @@ def get_rules():
             with open(rules_path, "r") as infile:
                 rules = json.load(infile)
     except FileNotFoundError:
-        raise AvalonError("File '{}' doesn't exist!".format(filename))
+        raise AvalonBGError("File '{}' doesn't exist!".format(filename))
     except json.decoder.JSONDecodeError:
-        raise AvalonError("File '{}' can't be decoded!".format(filename))
+        raise AvalonBGError("File '{}' can't be decoded!".format(filename))
 
     return rules

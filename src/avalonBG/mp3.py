@@ -3,8 +3,8 @@ from pathlib import Path
 
 from pydub import AudioSegment
 
-from avalon.db_utils import db_get_value
-from avalon.exception import AvalonError
+from avalonBG.db_utils import db_get_value
+from avalonBG.exception import AvalonBGError
 from .resources import audio
 
 
@@ -61,6 +61,6 @@ def get_mp3_roles_path(game_id, output_mp3_path="resources"):
     mp3_roles_path = Path(output_mp3_path, "_{}.mp3".format(name_roles))
 
     if not mp3_roles_path.exists():
-        raise AvalonError("Mp3 file doesn't exist for this game!")
+        raise AvalonBGError("Mp3 file doesn't exist for this game!")
 
     return mp3_roles_path.as_posix()
